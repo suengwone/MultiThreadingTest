@@ -1,0 +1,30 @@
+#pragma kernel CountPixel
+
+// Texture2D that contains the pixels to count
+Texture2D<float4> inputTexture;
+RWTexture2D<float4> outputTexture;
+
+RWStructuredBuffer<int> outputBuffer;
+
+float3 rgb_std;
+
+[numthreads(8,8,1)]
+// match method name(CountPixel) with kernel name
+void CountPixel(uint3 threadID : SV_DispatchThreadID)
+{
+    float4 pixelColor = inputTexture.Load(uint3(threadID.x, threadID.y, 0));
+
+    if(pixelColor.r == 0 && pixelColor.g == 0 && pixelColor.b == 0)
+    {
+        outputTexture[threadID.xy] = pixelColor;
+    }
+    else if(pixelColor.r <= rgb_std.r && pixelColor.g <= rgb_std.g && pixelColor.b <= rgb_std.b)
+    {
+        InterlockedAdd(outputBuffer[0], 1);
+        outputTexture[threadID.xy] = float4(1,1,1,1);
+    }
+    else
+    {
+        outputTexture[threadID.xy] = float4(0,0,0,1);
+    }
+}
